@@ -881,64 +881,84 @@ function createGroups(people, targetSize, remainderHandling) {
   const n = people.length;
   const sizes = [];
 
-  // Compute final group sizes the same way you do now
-  if (remainderHandling === 'balanced' && targetSize === 3) {
-    const r = n % 3;
-    if (r === 1) sizes.push(4);                  // 4 + many 3s
-    if (r === 2) sizes.push(2);                  // 2 + many 3s
-    const used = sizes.reduce((a,b)=>a+b,0);
-    for (let i = used; i < n; i += 3) sizes.push(3);
+  const r = n % targetSize;
+
+  if (remainderHandling === 'balanced') {
+    if (targetSize === 3) {
+      // Preserve existing triads behavior:
+      // r=1 -> one 4; r=2 -> one 2; others -> all 3s
+      if (r === 1 && n >= 4) sizes.push(4);
+      else if (r === 2) sizes.push(2);
+      const used = sizes.reduce((a,b)=>a+b,0);
+      for (let i = used; i < n; i += 3) sizes.push(3);
+    } else {
+      // General balanced behavior for any group size:
+      // Prefer a single remainder group close to targetSize.
+      // Special case when r=1: avoid a 1-person group by making one (targetSize+1).
+      if (r === 0) {
+        for (let i = 0; i < n; i += targetSize) sizes.push(targetSize);
+      } else {
+        if (r === 1) {
+          sizes.push(targetSize + 1); // e.g., 3 for pairs, 5 for quads
+        } else {
+          sizes.push(r); // e.g., 2 or 3 for quads, 2 for pairs
+        }
+        const used = sizes.reduce((a,b)=>a+b,0);
+        for (let i = used; i < n; i += targetSize) sizes.push(targetSize);
+      }
+    }
   } else {
+    // Other strategies
     const full = Math.floor(n / targetSize);
     for (let i = 0; i < full; i++) sizes.push(targetSize);
-    const r = n % targetSize;
     if (r > 0) {
       if (remainderHandling === 'smaller') {
         sizes.push(r);
       } else if (remainderHandling === 'larger') {
-        // We’ll “overflow” later by letting some groups take an extra person
-        for (let i = 0; i < r; i++) sizes[i % sizes.length] += 1;
+        if (sizes.length > 0) {
+          for (let i = 0; i < r; i++) sizes[i % sizes.length] += 1;
+        } else {
+          sizes.push(r);
+        }
+      } else {
+        // 'skip' → ignore remainder
       }
-      // 'skip' → ignore the remainder (do nothing)
     }
   }
+
+  if (sizes.length === 0) return [];
 
   // Prepare containers
   const groups = sizes.map(sz => ({ cap: sz, members: [], groupsSeen: new Set() }));
 
-  // We’ll reuse your seed hashing to make choices reproducible-ish
+  // Deterministic-ish seed
   let seedNum;
   try {
     seedNum = hashCode(String(currentSeed || 'seed'));
   } catch (e) {
-    // fallback if hashCode/currentSeed not present; still deterministic-ish
     seedNum = 123456789;
   }
 
-  // Greedy fill: for each person, try to place into a group that
-  // 1) has capacity AND 2) hasn’t seen this person's Group yet.
-  // If none, place into any group with capacity (least-filled first).
-  const order = [...people]; // already shuffled upstream (assumed)
+  const order = [...people]; // assumed pre-shuffled
 
   for (const p of order) {
     const g = p.Group ?? p.group ?? p.groupName ?? p.team ?? p.coreTeam;
 
-    // candidate groups with space
     const withSpace = groups
       .map((G, idx) => ({ idx, left: G.cap - G.members.length, G }))
       .filter(x => x.left > 0);
 
-    // perfect fits: no collision of Group inside that chat
+    if (withSpace.length === 0) break;
+
     const perfectIdxs = withSpace
       .filter(x => !x.G.groupsSeen.has(g))
-      .sort((a, b) => a.G.members.length - b.G.members.length) // prefer smallest so far
+      .sort((a, b) => a.G.members.length - b.G.members.length)
       .map(x => x.idx);
 
     let targetIdx;
     if (perfectIdxs.length > 0) {
       targetIdx = chooseWeighted(perfectIdxs, seedNum);
     } else {
-      // no way to avoid a clash → pick any group with space, prefer least-filled
       const fallbackIdxs = withSpace
         .sort((a, b) => a.G.members.length - b.G.members.length)
         .map(x => x.idx);
@@ -950,7 +970,6 @@ function createGroups(people, targetSize, remainderHandling) {
     if (g != null) slot.groupsSeen.add(g);
   }
 
-  // Convert back to plain array-of-arrays
   return groups.map(g => g.members);
 }
 
