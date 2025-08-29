@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MIT Sloan Coffee Chat Scheduler</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js">
+    // Build a human-readable summary like "24 people → 8 trios, 1 pair"
+    function buildSummary(schedule) {
+        const sizeCounts = {};
+        let total = 0;
+        schedule.forEach(g => {
+            const sz = g.length;
+            sizeCounts[sz] = (sizeCounts[sz] || 0) + 1;
+            total += sz;
+        });
+        const parts = Object.entries(sizeCounts)
+            .sort((a,b)=>a[0]-b[0])
+            .map(([sz, count]) => {
+                const n = parseInt(sz,10);
+                const label = n === 2 ? 'pair' : (n === 3 ? 'trio' : (n === 4 ? 'quad' : `${n}`));
+                return `${count} ${label}${count===1?'':'s'}`;
+            });
+        return `${total} people → ${parts.join(', ')}`;
+    }
+
+    // Copy a plain-text version of the current schedule to the clipboard
+    async function copyToClipboard() {
+        if (currentSchedule.length === 0) {
+            showError('No schedule to copy. Generate a schedule first.');
+            return;
+        }
+        const weekTitle = document.getElementById('scheduleTitle').textContent.trim();
+        const lines = [weekTitle, `Seed: ${currentSeed}`, ''];
+        currentSchedule.forEach((group, idx) => {
+            lines.push(`Group ${idx+1}`);
+            group.forEach(person => {
+                lines.push(`- ${person.Name} (${person.Group})`);
+            });
+            lines.push('');
+        });
+        const text = lines.join('\n');
+        try {
+            await navigator.clipboard.writeText(text);
+            showSuccess('Copied schedule to clipboard! Paste into Slack/WhatsApp.');
+        } catch (err) {
+            showError('Clipboard copy failed. Your browser may block it.');
+            console.error(err);
+        }
+    }
+
+</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js">
+    // Build a human-readable summary like "24 people → 8 trios, 1 pair"
+    function buildSummary(schedule) {
+        const sizeCounts = {};
+        let total = 0;
+        schedule.forEach(g => {
+            const sz = g.length;
+            sizeCounts[sz] = (sizeCounts[sz] || 0) + 1;
+            total += sz;
+        });
+        const parts = Object.entries(sizeCounts)
+            .sort((a,b)=>a[0]-b[0])
+            .map(([sz, count]) => {
+                const n = parseInt(sz,10);
+                const label = n === 2 ? 'pair' : (n === 3 ? 'trio' : (n === 4 ? 'quad' : `${n}`));
+                return `${count} ${label}${count===1?'':'s'}`;
+            });
+        return `${total} people → ${parts.join(', ')}`;
+    }
+
+    // Copy a plain-text version of the current schedule to the clipboard
+    async function copyToClipboard() {
+        if (currentSchedule.length === 0) {
+            showError('No schedule to copy. Generate a schedule first.');
+            return;
+        }
+        const weekTitle = document.getElementById('scheduleTitle').textContent.trim();
+        const lines = [weekTitle, `Seed: ${currentSeed}`, ''];
+        currentSchedule.forEach((group, idx) => {
+            lines.push(`Group ${idx+1}`);
+            group.forEach(person => {
+                lines.push(`- ${person.Name} (${person.Group})`);
+            });
+            lines.push('');
+        });
+        const text = lines.join('\n');
+        try {
+            await navigator.clipboard.writeText(text);
+            showSuccess('Copied schedule to clipboard! Paste into Slack/WhatsApp.');
+        } catch (err) {
+            showError('Clipboard copy failed. Your browser may block it.');
+            console.error(err);
+        }
+    }
+
+</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js">
+    // Build a human-readable summary like "24 people → 8 trios, 1 pair"
+    function buildSummary(schedule) {
+        const sizeCounts = {};
+        let total = 0;
+        schedule.forEach(g => {
+            const sz = g.length;
+            sizeCounts[sz] = (sizeCounts[sz] || 0) + 1;
+            total += sz;
+        });
+        const parts = Object.entries(sizeCounts)
+            .sort((a,b)=>a[0]-b[0])
+            .map(([sz, count]) => {
+                const n = parseInt(sz,10);
+                const label = n === 2 ? 'pair' : (n === 3 ? 'trio' : (n === 4 ? 'quad' : `${n}`));
+                return `${count} ${label}${count===1?'':'s'}`;
+            });
+        return `${total} people → ${parts.join(', ')}`;
+    }
+
+    // Copy a plain-text version of the current schedule to the clipboard
+    async function copyToClipboard() {
+        if (currentSchedule.length === 0) {
+            showError('No schedule to copy. Generate a schedule first.');
+            return;
+        }
+        const weekTitle = document.getElementById('scheduleTitle').textContent.trim();
+        const lines = [weekTitle, `Seed: ${currentSeed}`, ''];
+        currentSchedule.forEach((group, idx) => {
+            lines.push(`Group ${idx+1}`);
+            group.forEach(person => {
+                lines.push(`- ${person.Name} (${person.Group})`);
+            });
+            lines.push('');
+        });
+        const text = lines.join('\n');
+        try {
+            await navigator.clipboard.writeText(text);
+            showSuccess('Copied schedule to clipboard! Paste into Slack/WhatsApp.');
+        } catch (err) {
+            showError('Clipboard copy failed. Your browser may block it.');
+            console.error(err);
+        }
+    }
+
+</script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #8B1538 0%, #A41E36 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #8B1538 0%, #A41E36 100%);
+            color: white;
+            padding: 30px 40px;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            min-height: 500px;
+        }
+
+        .upload-section {
+            padding: 40px;
+            border-right: 1px solid #e5e5e5;
+        }
+
+        .config-section {
+            padding: 40px;
+            background: #f8f9fa;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-area:hover, .upload-area.dragover {
+            border-color: #8B1538;
+            background: #f8f9fa;
+        }
+
+        .upload-area.has-file {
+            border-color: #28a745;
+            background: #f8fff9;
+        }
+
+        .upload-btn {
+            background: #8B1538;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.3s ease;
+        }
+
+        .upload-btn:hover {
+            background: #A41E36;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .csv-input {
+            width: 100%;
+            min-height: 120px;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            margin: 15px 0;
+            resize: vertical;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-group select, .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+
+        .form-group input[type="date"] {
+            padding: 9px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 25px;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            flex: 1;
+        }
+
+        .btn-primary {
+            background: #8B1538;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #A41E36;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .shuffle-hint {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .results-section {
+            padding: 40px;
+            background: white;
+        }
+
+        .schedule-header {
+            background: linear-gradient(135deg, #8B1538 0%, #A41E36 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .schedule-info {
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .schedule-meta {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .seed-info {
+            font-size: 0.85rem;
+            opacity: 0.8;
+        }
+
+        .groups-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .group-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .group-title {
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #8B1538;
+            font-size: 1.1rem;
+        }
+
+        .member {
+            display: inline-block;
+            background: #f8f9fa;
+            padding: 6px 12px;
+            margin: 4px 6px 4px 0;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            border: 1px solid #e9ecef;
+        }
+
+        .member-name {
+            font-weight: 500;
+        }
+
+        .member-group {
+            color: #666;
+            font-size: 0.85rem;
+            margin-left: 4px;
+        }
+
+        .download-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            padding: 20px 0;
+        }
+
+        .download-btn {
+            background: #8B1538;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .download-btn:hover {
+            background: #A41E36;
+        }
+
+        .tip {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 12px 16px;
+            margin-top: 20px;
+            border-radius: 0 6px 6px 0;
+            font-size: 0.9rem;
+            color: #1565c0;
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin: 15px 0;
+            border-left: 4px solid #f44336;
+        }
+
+        .success {
+            background: #e8f5e8;
+            color: #2e7d32;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin: 15px 0;
+            border-left: 4px solid #4caf50;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .upload-section {
+                border-right: none;
+                border-bottom: 1px solid #e5e5e5;
+            }
+            
+            .groups-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .download-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .download-btn {
+                width: 200px;
+                justify-content: center;
+            }
+        }
+
+        /* Keyboard shortcut styling */
+        .shortcut-key {
+            display: inline-block;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 3px;
+            padding: 2px 6px;
+            font-size: 0.8rem;
+            font-family: monospace;
+            margin: 0 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 1.5rem;">☕</span>
+                <div>
+                    <h1>MIT Sloan - Coffee Chats</h1>
+                    <p>Weekly Scheduler</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="upload-section">
+                <h2 class="section-title">1) Upload roster (CSV or Excel)</h2>
+                <p style="margin-bottom: 20px; color: #666;">Required columns: <strong>Name</strong>, <strong>Group</strong> (i.e., Penguin)</p>
+                
+                <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+                    <div id="uploadContent">
+                        <div style="font-size: 2rem; margin-bottom: 10px; opacity: 0.5;">📁</div>
+                        <div>Drag & drop file here</div>
+                        <button class="upload-btn" style="margin-top: 15px;">Choose file</button>
+                    </div>
+                </div>
+                <input type="file" id="fileInput" class="file-input" accept=".csv,.xlsx,.xls">
+                
+                <div style="text-align: center; margin: 20px 0; color: #999;">or</div>
+                
+                <div>
+                    <label for="csvInput" style="font-weight: 500; margin-bottom: 8px; display: block;">Paste CSV below (headers: Name,Group):</label>
+                    <textarea id="csvInput" class="csv-input" placeholder="Name,Group&#10;Claude Shannon,Penguins&#10;Barbara Liskov,Puffins&#10;John McCarthy,Cranes&#10;..."></textarea>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-secondary" onclick="parsePastedCSV()" style="flex: none; padding: 8px 16px;">Parse pasted CSV</button>
+                        <button class="btn btn-secondary" onclick="loadDummyData()" style="flex: none; padding: 8px 16px;">Load dummy data</button>
+                    </div>
+                </div>
+                
+                <div id="dataStatus" class="hidden" style="margin-top: 20px; padding: 12px; background: #f8f9fa; border-radius: 6px;">
+                    <div id="statusText"></div>
+                </div>
+            </div>
+            
+            <div class="config-section">
+                <h2 class="section-title">2) Configure</h2>
+                
+                <div class="form-group">
+                    <label for="groupSize">Group size</label>
+                    <select id="groupSize">
+                        <option value="2">Pairs (2)</option>
+                        <option value="3" selected>Trios (3)</option>
+                        <option value="4">Quads (4)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="remainderHandling">Remainder strategy</label>
+                    <select id="remainderHandling">
+                        <option value="balanced" selected>Balanced (mix 2s/4s)</option>
+                        <option value="smaller">Create smaller groups</option>
+                        <option value="larger">Create larger groups</option>
+                        <option value="skip">Skip remaining people</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="seedInput">Seed (leave blank for new random each run)</label>
+                    <input type="text" id="seedInput" placeholder="e.g. 2025-09-01-Atlantic">
+                </div>
+
+                <div class="form-group">
+                    <label for="weekDate">Week (Sunday)</label>
+                    <input type="date" id="weekDate">
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="generateBtn" onclick="generateSchedule()" disabled>
+                        Generate schedule
+                    </button>
+                    <button class="btn btn-secondary" onclick="clearAll()">
+                        Clear
+                    </button>
+                </div>
+
+                <div class="shuffle-hint">
+                    Press <span class="shortcut-key">R</span> to re-shuffle
+                </div>
+            </div>
+        </div>
+        
+        <div id="resultsSection" class="results-section hidden">
+            <div class="schedule-header" id="scheduleHeader">
+                <div>
+                    <div class="schedule-info" id="scheduleTitle">Week of Saturday, Aug 30, 2025</div>
+                    <div class="schedule-meta" id="scheduleMeta">Group size 3 · Balanced remainders</div>
+                    <div class="schedule-meta" id="scheduleSummary"></div>
+                </div>
+                <div class="seed-info" id="seedDisplay">Seed: 2651340448</div>
+            </div>
+            
+            <div id="groupsContainer" class="groups-grid">
+                <!-- Groups will be generated here -->
+            </div>
+            
+            <div class="download-actions">
+                <button class="download-btn" onclick="downloadCSV()">
+                    <span>📄</span> Download CSV
+                </button>
+                <button class="download-btn" onclick="downloadPNG()">
+                    <span>🖼️</span> Save as PNG
+                </button>
+                <button class="download-btn" onclick="copyToClipboard()">
+                    <span>📋</span> Copy text
+                </button>
+            </div>
+            
+            <div class="tip">
+                <strong>Tip:</strong> PNG export is perfect for Slack/WhatsApp.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let rosterData = [];
+        let currentSchedule = [];
+        let currentSeed = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set default date to next Sunday
+            const today = new Date();
+            const nextSunday = new Date(today);
+            nextSunday.setDate(today.getDate() + (7 - today.getDay()) % 7);
+            function formatDateForInput(date) {
+                const y = date.getFullYear();
+                const m = String(date.getMonth() + 1).padStart(2, '0');
+                const d = String(date.getDate()).padStart(2, '0');
+                return `${y}-${m}-${d}`;
+            }
+            document.getElementById('weekDate').value = formatDateForInput(nextSunday);
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'r' || e.key === 'R') {
+                    if (rosterData.length > 0 && !document.getElementById('generateBtn').disabled) {
+                        e.preventDefault();
+                        // If seed was auto-generated previously or left blank, force a new one.
+                        // We detect "manual" seeds by checking if the field is focused or if it has non-empty value and the user held Shift.
+                        const seedEl = document.getElementById('seedInput');
+                        // Default behavior: always clear to get fresh random seed on reshuffle
+                        seedEl.value = '';
+                        generateSchedule();
+                    }
+                }
+            });
+});
+
+        // File upload handling
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = Array.from(e.dataTransfer.files);
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        async function handleFile(file) {
+            const ext = file.name.toLowerCase().split('.').pop();
+            if (!['csv', 'xlsx', 'xls'].includes(ext)) {
+                showError('Please upload a CSV or Excel file.');
+                return;
+            }
+
+            try {
+                const data = await processFile(file);
+                processRosterData(data, file.name);
+            } catch (error) {
+                showError(`Error processing file: ${error.message}`);
+            }
+        }
+
+        async function processFile(file) {
+            return new Promise((resolve, reject) => {
+                const ext = file.name.toLowerCase().split('.').pop();
+                
+                if (ext === 'csv') {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const result = Papa.parse(e.target.result, {
+                                header: true,
+                                skipEmptyLines: true,
+                                dynamicTyping: true
+                            });
+                            resolve(result.data);
+                        } catch (error) {
+                            reject(error);
+                        }
+                    };
+                    reader.onerror = reject;
+                    reader.readAsText(file);
+                } else {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const workbook = XLSX.read(e.target.result, { type: 'binary' });
+                            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                            const data = XLSX.utils.sheet_to_json(firstSheet);
+                            resolve(data);
+                        } catch (error) {
+                            reject(error);
+                        }
+                    };
+                    reader.onerror = reject;
+                    reader.readAsBinaryString(file);
+                }
+            });
+        }
+
+        function parsePastedCSV() {
+            const csvText = document.getElementById('csvInput').value.trim();
+            if (!csvText) {
+                showError('Please paste CSV data first.');
+                return;
+            }
+
+            try {
+                const result = Papa.parse(csvText, {
+                    header: true,
+                    skipEmptyLines: true,
+                    dynamicTyping: true
+                });
+                processRosterData(result.data, 'Pasted CSV');
+                document.getElementById('csvInput').value = '';
+            } catch (error) {
+                showError(`Error parsing CSV: ${error.message}`);
+            }
+        }
+
+        function loadDummyData() {
+            const dummyData = [
+                { Name: "Claude Shannon", Group: "F" },
+                { Name: "Barbara Liskov", Group: "G" },
+                { Name: "John McCarthy", Group: "H" },
+                { Name: "Donald Knuth", Group: "I" },
+                { Name: "Fei-Fei Li", Group: "J" },
+                { Name: "Geoff Hinton", Group: "K" },
+                { Name: "Yoshua Bengio", Group: "L" },
+                { Name: "Alan Turing", Group: "D" },
+                { Name: "Grace Hopper", Group: "C" },
+                { Name: "Linus Torvalds", Group: "B" },
+                { Name: "Katherine Johnson", Group: "E" },
+                { Name: "Ada Lovelace", Group: "A" }
+            ];
+            
+            processRosterData(dummyData, 'Dummy Data');
+        }
+
+        function processRosterData(data, source) {
+            try {
+                // Validate required columns
+                const required = ['Name', 'Group'];
+                const columns = Object.keys(data[0] || {});
+                const missing = required.filter(col => !columns.includes(col));
+                
+                if (missing.length > 0) {
+                    throw new Error(`Missing columns: ${missing.join(', ')}`);
+                }
+
+                // Clean and standardize data
+                const cleanData = data.map(row => ({
+                    Name: String(row.Name || '').trim(),
+                    Group: String(row.Group || '').trim().toUpperCase()
+                })).filter(row => row.Name && row.Group);
+
+                if (cleanData.length === 0) {
+                    throw new Error('No valid data found');
+                }
+
+                rosterData = cleanData;
+                updateDataStatus(source);
+                document.getElementById('generateBtn').disabled = false;
+                
+                // Update upload area
+                const uploadArea = document.getElementById('uploadArea');
+                uploadArea.classList.add('has-file');
+                document.getElementById('uploadContent').innerHTML = `
+                    <div style="font-size: 1.5rem; margin-bottom: 8px;">✅</div>
+                    <div><strong>Loaded ${cleanData.length} people</strong></div>
+                    <div style="font-size: 0.9rem; color: #666; margin-top: 5px;">from ${source}</div>
+                `;
+
+                showSuccess(`Loaded ${cleanData.length} people from ${source}`);
+                
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+
+        function updateDataStatus(source) {
+            const groups = [...new Set(rosterData.map(p => p.Group))].sort();
+            const groupCounts = groups.map(g => `${g}:${rosterData.filter(p => p.Group === g).length}`).join(', ');
+            
+            document.getElementById('statusText').innerHTML = `
+                <strong>Loaded ${rosterData.length} people from ${source}</strong><br>
+                <small>Groups: ${groupCounts}</small>
+            `;
+            document.getElementById('dataStatus').classList.remove('hidden');
+        }
+
+        function generateSchedule() {
+            if (rosterData.length === 0) {
+                showError('Please upload roster data first.');
+                return;
+            }
+
+            const settings = {
+                groupSize: parseInt(document.getElementById('groupSize').value),
+                remainderHandling: document.getElementById('remainderHandling').value,
+                weekDate: (function(){ 
+                    const v = document.getElementById('weekDate').value;
+                    const parts = v ? v.split('-').map(Number) : null;
+                    return parts ? new Date(parts[0], parts[1]-1, parts[2]) : new Date();
+                })()
+            };
+
+            // Handle seed
+            let seed = document.getElementById('seedInput').value.trim();
+            if (!seed) {
+                seed = Math.floor(Math.random() * 10000000000).toString();
+                document.getElementById('seedInput').value = seed;
+            }
+            currentSeed = seed;
+
+            try {
+                currentSchedule = createWeeklyGroups(rosterData, settings, seed);
+                displaySchedule(settings);
+                document.getElementById('resultsSection').classList.remove('hidden');
+                document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+            } catch (error) {
+                showError(`Error generating schedule: ${error.message}`);
+            }
+        }
+
+        function createWeeklyGroups(people, settings, seed) {
+            // Simple seeded shuffle
+            const shuffled = [...people];
+            let seedNum = hashCode(seed);
+            
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                seedNum = (seedNum * 1664525 + 1013904223) % (2**32);
+                const j = seedNum % (i + 1);
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+
+            return createGroups(shuffled, settings.groupSize, settings.remainderHandling);
+        }
+
+        /** Tie-breaker that’s deterministic-ish off the current seed hash you already use */
+function chooseWeighted(indices, seedNum) {
+  if (indices.length === 1) return indices[0];
+  seedNum = (seedNum * 1664525 + 1013904223) % (2**32);
+  const pick = seedNum % indices.length;
+  return indices[pick];
+}
+function createGroups(people, targetSize, remainderHandling) {
+  const n = people.length;
+  const sizes = [];
+
+  // Compute final group sizes the same way you do now
+  if (remainderHandling === 'balanced' && targetSize === 3) {
+    const r = n % 3;
+    if (r === 1) sizes.push(4);                  // 4 + many 3s
+    if (r === 2) sizes.push(2);                  // 2 + many 3s
+    const used = sizes.reduce((a,b)=>a+b,0);
+    for (let i = used; i < n; i += 3) sizes.push(3);
+  } else {
+    const full = Math.floor(n / targetSize);
+    for (let i = 0; i < full; i++) sizes.push(targetSize);
+    const r = n % targetSize;
+    if (r > 0) {
+      if (remainderHandling === 'smaller') {
+        sizes.push(r);
+      } else if (remainderHandling === 'larger') {
+        // We’ll “overflow” later by letting some groups take an extra person
+        for (let i = 0; i < r; i++) sizes[i % sizes.length] += 1;
+      }
+      // 'skip' → ignore the remainder (do nothing)
+    }
+  }
+
+  // Prepare containers
+  const groups = sizes.map(sz => ({ cap: sz, members: [], groupsSeen: new Set() }));
+
+  // We’ll reuse your seed hashing to make choices reproducible-ish
+  let seedNum;
+  try {
+    seedNum = hashCode(String(currentSeed || 'seed'));
+  } catch (e) {
+    // fallback if hashCode/currentSeed not present; still deterministic-ish
+    seedNum = 123456789;
+  }
+
+  // Greedy fill: for each person, try to place into a group that
+  // 1) has capacity AND 2) hasn’t seen this person's Group yet.
+  // If none, place into any group with capacity (least-filled first).
+  const order = [...people]; // already shuffled upstream (assumed)
+
+  for (const p of order) {
+    const g = p.Group ?? p.group ?? p.groupName ?? p.team ?? p.coreTeam;
+
+    // candidate groups with space
+    const withSpace = groups
+      .map((G, idx) => ({ idx, left: G.cap - G.members.length, G }))
+      .filter(x => x.left > 0);
+
+    // perfect fits: no collision of Group inside that chat
+    const perfectIdxs = withSpace
+      .filter(x => !x.G.groupsSeen.has(g))
+      .sort((a, b) => a.G.members.length - b.G.members.length) // prefer smallest so far
+      .map(x => x.idx);
+
+    let targetIdx;
+    if (perfectIdxs.length > 0) {
+      targetIdx = chooseWeighted(perfectIdxs, seedNum);
+    } else {
+      // no way to avoid a clash → pick any group with space, prefer least-filled
+      const fallbackIdxs = withSpace
+        .sort((a, b) => a.G.members.length - b.G.members.length)
+        .map(x => x.idx);
+      targetIdx = chooseWeighted(fallbackIdxs, seedNum);
+    }
+
+    const slot = groups[targetIdx];
+    slot.members.push(p);
+    if (g != null) slot.groupsSeen.add(g);
+  }
+
+  // Convert back to plain array-of-arrays
+  return groups.map(g => g.members);
+}
+
+        function displaySchedule(settings) {
+            const weekDate = settings.weekDate;
+            const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            
+            const weekDateStr = `${dayNames[weekDate.getDay()]}, ${monthNames[weekDate.getMonth()]} ${weekDate.getDate()}, ${weekDate.getFullYear()}`;
+            const groupSizeText = settings.groupSize === 2 ? 'pairs' : settings.groupSize === 3 ? 'trios' : 'quads';
+            const remainderText = settings.remainderHandling.charAt(0).toUpperCase() + settings.remainderHandling.slice(1);
+
+            document.getElementById('scheduleTitle').textContent = `Week of ${weekDateStr}`;
+            document.getElementById('scheduleMeta').textContent = `Group size ${settings.groupSize} · ${remainderText} remainders`;
+            document.getElementById('seedDisplay').textContent = `Seed: ${currentSeed}`;
+            // Update summary
+            const summary = buildSummary(currentSchedule);
+            const summaryEl = document.getElementById('scheduleSummary');
+            if (summaryEl) summaryEl.textContent = summary;
+
+            const container = document.getElementById('groupsContainer');
+            container.innerHTML = currentSchedule.map((group, index) => `
+                <div class="group-card">
+                    <div class="group-title">Group ${index + 1}</div>
+                    <div>
+                        ${group.map(person => `
+                            <span class="member">
+                                <span class="member-name">${person.Name}</span>
+                                <span class="member-group">· ${person.Group}</span>
+                            </span>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function downloadCSV() {
+            if (currentSchedule.length === 0) {
+                showError('No schedule to download. Generate a schedule first.');
+                return;
+            }
+
+            const csvData = [];
+            currentSchedule.forEach((group, groupIndex) => {
+                group.forEach(person => {
+                    csvData.push({
+                        Group: groupIndex + 1,
+                        Name: person.Name,
+                        Team: person.Group
+                    });
+                });
+            });
+
+            const csv = convertToCSV(csvData);
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `coffee_chats_${currentSeed}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        async function downloadPNG() {
+            if (currentSchedule.length === 0) {
+                showError('No schedule to download. Generate a schedule first.');
+                return;
+            }
+
+            try {
+                const element = document.getElementById('resultsSection');
+                // Hide download buttons temporarily for cleaner image
+                const downloadActions = element.querySelector('.download-actions');
+                const tip = element.querySelector('.tip');
+                downloadActions.style.display = 'none';
+                tip.style.display = 'none';
+
+                const canvas = await html2canvas(element, {
+                    backgroundColor: '#ffffff',
+                    scale: 2,
+                    useCORS: true
+                });
+
+                // Restore download buttons
+                downloadActions.style.display = 'flex';
+                tip.style.display = 'block';
+
+                // Download the image
+                const link = document.createElement('a');
+                link.download = `coffee_chats_${currentSeed}.png`;
+                link.href = canvas.toDataURL();
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+            } catch (error) {
+                showError('Error generating PNG. Please try downloading CSV instead.');
+                console.error('PNG generation error:', error);
+            }
+        }
+
+        function convertToCSV(data) {
+            if (data.length === 0) return '';
+            
+            const headers = Object.keys(data[0]);
+            const csvRows = [headers.join(',')];
+            
+            data.forEach(row => {
+                const values = headers.map(header => {
+                    const value = row[header];
+                    if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
+                        return `"${value.replace(/"/g, '""')}"`;
+                    }
+                    return value;
+                });
+                csvRows.push(values.join(','));
+            });
+            
+            return csvRows.join('\n');
+        }
+
+        function hashCode(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                const char = str.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash; // Convert to 32-bit integer
+            }
+            return Math.abs(hash);
+        }
+
+        function clearAll() {
+            rosterData = [];
+            currentSchedule = [];
+            currentSeed = null;
+            
+            document.getElementById('fileInput').value = '';
+            document.getElementById('csvInput').value = '';
+            document.getElementById('seedInput').value = '';
+            document.getElementById('generateBtn').disabled = true;
+            document.getElementById('dataStatus').classList.add('hidden');
+            document.getElementById('resultsSection').classList.add('hidden');
+            
+            // Reset upload area
+            const uploadArea = document.getElementById('uploadArea');
+            uploadArea.classList.remove('has-file');
+            document.getElementById('uploadContent').innerHTML = `
+                <div style="font-size: 2rem; margin-bottom: 10px; opacity: 0.5;">📁</div>
+                <div>Drag & drop file here</div>
+                <button class="upload-btn" style="margin-top: 15px;">Choose file</button>
+            `;
+            
+            clearMessages();
+        }
+
+        function showError(message) {
+            clearMessages();
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error';
+            errorDiv.innerHTML = `❌ ${message}`;
+            
+            // Insert after the config section or upload section
+            const configSection = document.querySelector('.config-section');
+            const uploadSection = document.querySelector('.upload-section');
+            const targetSection = configSection || uploadSection;
+            targetSection.appendChild(errorDiv);
+            
+            setTimeout(() => errorDiv.remove(), 8000);
+        }
+
+        function showSuccess(message) {
+            clearMessages();
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success';
+            successDiv.innerHTML = `✅ ${message}`;
+            
+            const configSection = document.querySelector('.config-section');
+            const uploadSection = document.querySelector('.upload-section');
+            const targetSection = configSection || uploadSection;
+            targetSection.appendChild(successDiv);
+            
+            setTimeout(() => successDiv.remove(), 5000);
+        }
+
+        function clearMessages() {
+            document.querySelectorAll('.error, .success').forEach(el => el.remove());
+        }
+    
+    // Build a human-readable summary like "24 people → 8 trios, 1 pair"
+    function buildSummary(schedule) {
+        const sizeCounts = {};
+        let total = 0;
+        schedule.forEach(g => {
+            const sz = g.length;
+            sizeCounts[sz] = (sizeCounts[sz] || 0) + 1;
+            total += sz;
+        });
+        const parts = Object.entries(sizeCounts)
+            .sort((a,b)=>a[0]-b[0])
+            .map(([sz, count]) => {
+                const n = parseInt(sz,10);
+                const label = n === 2 ? 'pair' : (n === 3 ? 'trio' : (n === 4 ? 'quad' : `${n}`));
+                return `${count} ${label}${count===1?'':'s'}`;
+            });
+        return `${total} people → ${parts.join(', ')}`;
+    }
+
+    // Copy a plain-text version of the current schedule to the clipboard
+    async function copyToClipboard() {
+        if (currentSchedule.length === 0) {
+            showError('No schedule to copy. Generate a schedule first.');
+            return;
+        }
+        const weekTitle = document.getElementById('scheduleTitle').textContent.trim();
+        const lines = [weekTitle, `Seed: ${currentSeed}`, ''];
+        currentSchedule.forEach((group, idx) => {
+            lines.push(`Group ${idx+1}`);
+            group.forEach(person => {
+                lines.push(`- ${person.Name} (${person.Group})`);
+            });
+            lines.push('');
+        });
+        const text = lines.join('\n');
+        try {
+            await navigator.clipboard.writeText(text);
+            showSuccess('Copied schedule to clipboard! Paste into Slack/WhatsApp.');
+        } catch (err) {
+            showError('Clipboard copy failed. Your browser may block it.');
+            console.error(err);
+        }
+    }
+
+</script>
+</body>
+</html>
